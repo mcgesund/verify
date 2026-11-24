@@ -414,4 +414,4 @@ QR Code is a registered trademark of DENSO WAVE INCORPORATED.
 
 ## License
 
-The code in this repository is licensed under the MIT License, see [LICENSE](LICENSE). Dependencies installed with `npm install` are subject to their own licenses.
+Copyright (c) 2026 [McGesund](https://mcgesund.eu). The code in this repository is licensed under the MIT License, see [LICENSE](LICENSE). Dependencies installed with `npm install` are subject to their own licenses.
