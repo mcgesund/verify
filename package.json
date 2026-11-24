@@ -1,6 +1,6 @@
 {
   "name": "@mcgesund/verify",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Independent verifier for McGesund reviews: signatures (Ed25519, ML-DSA-87, SLH-DSA), Bitcoin timestamps and the transparency log — without trusting McGesund.",
   "license": "MIT",
   "homepage": "https://github.com/mcgesund/verify#readme",

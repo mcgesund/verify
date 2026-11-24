@@ -223,6 +223,10 @@ The log starts with its launch. Older reviews have no entries; they are not adde
 | `removed` | removed after publication | required |
 | `hidden` | hidden automatically | required |
 | `redacted` | redacted (section 5) | required |
+| `imported_published` | existed before the log started, publicly visible when taken over; names the redaction seal if redacted | – |
+| `imported` | existed before the log started, not public when taken over (pending, rejected, removed or hidden — the reason follows as a separate entry) | – |
+
+Reviews submitted before the log started were taken over once with their state at that time. The entry is dated to the takeover, not to the submission; the submission time is proven by the review's own Bitcoin proof (section 7).
 
 Reasons (`category`):
 
@@ -238,6 +242,7 @@ Reasons (`category`):
 | `policy_violation` | Violation of the guidelines | moderation |
 | `provider_deleted` | Provider deleted | system |
 | `invalid_signature` | Signature verification failed | system |
+| `not_recorded` | Not recorded before the log started (taken-over reviews only) | system |
 
 An entry has the fields `kind`, `at` (ISO-8601 with milliseconds, UTC), `category`, `commentDocumentId`, `firmaDocumentId`, `envelopeHash` (sha256 hex of the review's envelope), `sealHash` (sha256 hex of the redaction seal, only for `redacted`) and `salt` (16 random bytes, hex).
 

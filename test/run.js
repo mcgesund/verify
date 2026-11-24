@@ -4,7 +4,7 @@ import { verifyPackage } from '../lib/verify.js';
 import { verifySignature } from '../lib/algorithms.js';
 import { decode, encode } from 'cbor-x';
 import { createHash } from 'node:crypto';
-import { merkleRoot, verifyInclusion, verifyConsistency, verifyTreeHead, verifyReviewInLog } from '../lib/transparency-log.js';
+import { leafHash, merkleRoot, verifyInclusion, verifyConsistency, verifyTreeHead, verifyReviewInLog } from '../lib/transparency-log.js';
 
 // Removes all PQ signatures from a v4 envelope; the Ed25519 signature
 // stays valid because it only covers the payload bytes.
@@ -151,6 +151,39 @@ for (const name of ['unchanged', 'redacted', 'in-log']) {
   const swapped = structuredClone(pkg);
   swapped.envelope = load('../examples/log-proof.json').root.envelope;
   check(notAReview(await verifyPackage(swapped, { keys })), 'Signed tree head passed off as a review: is detected');
+}
+
+// Imported reviews (existed before the log started). Small single-leaf logs
+// built here; their tree heads are not signed, so only the entry checks count.
+{
+  const keys = load('../examples/demo-keys.json');
+  const kids = new Map(keys.keys.map((k) => [k.kid, k]));
+  const logProof = load('../examples/log-proof.json');
+  const withResponse = async (response, fn) => {
+    const original = globalThis.fetch;
+    globalThis.fetch = async () => new Response(JSON.stringify(response), { status: 200 });
+    try { return await fn(); } finally { globalThis.fetch = original; }
+  };
+  const redactedPkg = load('../examples/package-redacted.json');
+  const seal = redactedPkg.attestation.redaction.envelope;
+  const sha = (s) => createHash('sha256').update(s).digest('hex');
+  const logFor = (entries) => {
+    const leaves = entries.map((e) => Buffer.from(leafHash(e), 'hex'));
+    const root = merkleRoot(leaves).toString('hex');
+    return { root: { treeSize: entries.length, rootHash: root, envelope: logProof.root.envelope, anchor: {} }, pending: 0,
+      entries: entries.map((e, i) => ({ entry: { ...e, index: i, leafHash: leafHash(e) }, inclusionProof: entries.length === 1 ? [] : (i === 0 ? [leaves[1].toString('hex')] : [leaves[0].toString('hex')]) })) };
+  };
+  const base = { at: '2026-11-24T12:00:00.000Z', commentDocumentId: redactedPkg.comment, firmaDocumentId: 'demo-firma', envelopeHash: sha(redactedPkg.envelope), salt: 'ab'.repeat(16) };
+  const structural = /not included|does not match its details|belongs to a different review/;
+  const texts = async (log) => (await withResponse(log, () => verifyReviewInLog(redactedPkg, { api: 'http://test', keys: kids }))).map(([k, t]) => `${k} ${t}`);
+  const pub = await texts(logFor([{ ...base, kind: 'imported_published', category: null, sealHash: sha(seal) }]));
+  check(!pub.some((t) => structural.test(t) || /unknown kind|different envelope|different seal/.test(t)) && pub.some((t) => /^ok Latest redaction in the log names exactly this seal/.test(t)),
+    'Log: imported_published with redaction seal accepted');
+  check(pub.some((t) => /existed before the log started/.test(t)), 'Log: imported review is pointed out');
+  const wrongSeal = await texts(logFor([{ ...base, kind: 'imported_published', category: null, sealHash: 'ef'.repeat(32) }]));
+  check(wrongSeal.some((t) => /^error Latest redaction in the log names a different seal/.test(t)), 'Log: imported_published with a different seal: is detected');
+  const removed = await texts(logFor([{ ...base, kind: 'imported', category: null, sealHash: null }, { ...base, kind: 'removed', category: 'not_recorded', sealHash: null }]));
+  check(!removed.some((t) => structural.test(t) || /unknown kind/.test(t)) && removed.some((t) => /Latest entry is "removed"/.test(t)), 'Log: imported + removed (not_recorded) read correctly');
 }
 
 // --log-proof: the saved log proof is checked offline via verifyPackage
