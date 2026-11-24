@@ -1,0 +1,28 @@
+{
+  "name": "@mcgesund/verify",
+  "version": "1.0.0",
+  "description": "Independent verifier for McGesund reviews: signatures (Ed25519, ML-DSA-87, SLH-DSA), Bitcoin timestamps and the transparency log — without trusting McGesund.",
+  "license": "MIT",
+  "homepage": "https://github.com/mcgesund/verify#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mcgesund/verify.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mcgesund/verify/issues"
+  },
+  "type": "module",
+  "bin": {
+    "mc-verify": "bin/mc-verify.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node test/run.js"
+  },
+  "dependencies": {
+    "@noble/post-quantum": "0.7.1",
+    "cbor-x": "1.6.9"
+  }
+}
